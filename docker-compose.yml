@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dashboard
+      MYSQL_USER: dashboard_user
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3307:3306"
+    networks:
+      - dashboard
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend
+    container_name: laravel-api
+    ports:
+      - "8000:8000"
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - mysql
+    networks:
+      - dashboard
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: vue-app
+    ports:
+      - "5173:5173"
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    networks:
+      - dashboard
+    command: npm run dev -- --host
+
+volumes:
+  db_data:
+
+networks:
+  dashboard:
