@@ -1,21 +1,30 @@
 <script setup>
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import api from '@/api/api'
 import Swal from 'sweetalert2'
+import { Bar } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+} from 'chart.js'
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 const kpis = ref([])
 const loading = ref(true)
 let intervalId = null
-
 const previousValues = ref({})
 
-// Função auxiliar para identificar KPIs monetários
 const isMonetario = (titulo) => {
   return ['Vendas do Dia', 'Pedidos Finalizados'].includes(titulo)
 }
 
-// Formata como moeda
 const formatarMoeda = (valor) => {
   return valor.toLocaleString('pt-BR', {
     style: 'currency',
@@ -62,6 +71,30 @@ const fetchKpis = async () => {
   }
 }
 
+const chartData = computed(() => {
+  return {
+    labels: kpis.value.map(kpi => kpi.titulo),
+    datasets: [
+      {
+        label: 'Valores dos KPIs',
+        backgroundColor: '#0d6efd',
+        data: kpis.value.map(kpi => kpi.valor),
+      },
+    ],
+  }
+})
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+  },
+  scales: {
+    y: { beginAtZero: true },
+  },
+}
+
 onMounted(() => {
   fetchKpis()
   intervalId = setInterval(fetchKpis, 30000)
@@ -74,43 +107,50 @@ onUnmounted(() => {
 
 <template>
   <SidebarLayout>
-    <h2 class="mb-4 text-center">
-      📈 Dashboard de KPIs
-    </h2>
+    <div class="container-fluid px-2 px-sm-3">
+      <h2 class="mb-4 text-center">
+        📈 Dashboard de KPIs
+      </h2>
 
-    <div v-if="loading" class="text-center">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Carregando...</span>
+      <div v-if="loading" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Carregando...</span>
+        </div>
       </div>
-    </div>
 
-    <div v-else-if="kpis.length === 0" class="alert alert-info text-center">
-      Nenhum KPI encontrado.
-    </div>
+      <div v-else-if="kpis.length === 0" class="alert alert-info text-center">
+        Nenhum KPI encontrado.
+      </div>
 
-    <div v-else class="row">
-      <div class="col-12 col-md-6 mb-4" v-for="kpi in kpis" :key="kpi.id">
-        <div class="card h-100 shadow d-flex flex-column justify-content-between">
-          <div class="card-body">
-            <h5 class="card-title fw-bold">{{ kpi.titulo }}</h5>
-            <h4 class="text-primary">
-              {{ isMonetario(kpi.titulo) ? formatarMoeda(kpi.valor) : kpi.valor.toLocaleString('pt-BR') }}
-              <span v-if="kpi.mudou" class="badge bg-warning text-dark ms-2">Atualizado</span>
-            </h4>
+      <div v-else class="row g-3">
+        <div class="col-12 col-md-6" v-for="kpi in kpis" :key="kpi.id">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">{{ kpi.titulo }}</h5>
+              <h4 class="text-primary">
+                {{ isMonetario(kpi.titulo) ? formatarMoeda(kpi.valor) : kpi.valor.toLocaleString('pt-BR') }}
+                <span v-if="kpi.mudou" class="badge bg-warning text-dark ms-2">Atualizado</span>
+              </h4>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+              <span
+                :class="[ 'fw-semibold', kpi.variacao_percentual >= 0 ? 'text-success' : 'text-danger' ]"
+              >
+                <i :class="kpi.variacao_percentual >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down'" class="me-1"></i>
+                {{ Math.abs(kpi.variacao_percentual).toFixed(2) }}%
+              </span>
+            </div>
           </div>
-          <div class="card-footer bg-transparent border-0">
-            <span
-              :class="[
-                'fw-semibold',
-                kpi.variacao_percentual >= 0 ? 'text-success' : 'text-danger'
-              ]"
-            >
-              <i
-                :class="kpi.variacao_percentual >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down'"
-                class="me-1"
-              ></i>
-              {{ Math.abs(kpi.variacao_percentual).toFixed(2) }}%
-            </span>
+        </div>
+
+        <div class="col-12">
+          <div class="card shadow-sm mt-4">
+            <div class="card-body">
+              <h5 class="card-title">Gráfico Geral dos KPIs</h5>
+              <div style="height: 300px;">
+                <Bar :data="chartData" :options="chartOptions" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -128,7 +168,6 @@ onUnmounted(() => {
 .badge {
   animation: fadeIn 0.4s ease-in-out;
 }
-
 @keyframes fadeIn {
   0% { opacity: 0; transform: translateY(-2px); }
   100% { opacity: 1; transform: translateY(0); }
