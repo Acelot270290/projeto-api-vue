@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Kpi;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +13,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 🔒 Usuário admin fixo
+        User::factory()->admin()->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // 👤 Usuários aleatórios (opcional)
+        User::factory(5)->create();
+
+        // 📊 KPIs fixos (um de cada tipo)
+        Kpi::factory()->create(['titulo' => 'Vendas do Dia']);
+        Kpi::factory()->create(['titulo' => 'Visitas do Site']);
+        Kpi::factory()->create(['titulo' => 'Novos Usuários']);
+        Kpi::factory()->create(['titulo' => 'Pedidos Finalizados']);
     }
 }
