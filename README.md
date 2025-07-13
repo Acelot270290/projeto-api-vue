@@ -166,6 +166,6 @@ docker-compose down
 
 ## 👨‍💻 Autor
 
-Desenvolvido por [Seu Nome] - Fullstack Laravel + Vue.js
+Desenvolvido por [Alan Diniz] - Fullstack Laravel + Vue.js
 
 ---
