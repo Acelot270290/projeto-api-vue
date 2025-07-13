@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('kpis', function (Blueprint $table) {
             $table->id();
+            $table->string('titulo');
+            $table->decimal('valor', 10, 2);
+            $table->decimal('variacao_percentual', 5, 2);
             $table->timestamps();
         });
     }
