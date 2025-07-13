@@ -2,51 +2,46 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Kpi;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreKpiRequest;
+use App\Http\Requests\UpdateKpiRequest;
+use App\Repositories\KpiRepository;
+use Illuminate\Http\JsonResponse;
 
 class KpiController extends Controller
 {
-    public function index()
+    protected KpiRepository $kpiRepository;
+
+    public function __construct(KpiRepository $kpiRepository)
     {
-        return response()->json(Kpi::all());
+        $this->kpiRepository = $kpiRepository;
     }
 
-    public function store(Request $request)
+    public function index(): JsonResponse
     {
-        $validated = $request->validate([
-            'titulo' => 'required|string|max:255',
-            'valor' => 'required|numeric',
-            'variacao_percentual' => 'required|numeric',
-        ]);
+        return response()->json($this->kpiRepository->all());
+    }
 
-        $kpi = Kpi::create($validated);
-
+    public function store(StoreKpiRequest $request): JsonResponse
+    {
+        $kpi = $this->kpiRepository->create($request->validated());
         return response()->json($kpi, 201);
     }
 
-    public function show(Kpi $kpi)
+    public function show(int $id): JsonResponse
     {
+        $kpi = $this->kpiRepository->find($id);
         return response()->json($kpi);
     }
 
-    public function update(Request $request, Kpi $kpi)
+    public function update(UpdateKpiRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'titulo' => 'sometimes|required|string|max:255',
-            'valor' => 'sometimes|required|numeric',
-            'variacao_percentual' => 'sometimes|required|numeric',
-        ]);
-
-        $kpi->update($validated);
-
+        $kpi = $this->kpiRepository->update($id, $request->validated());
         return response()->json($kpi);
     }
 
-    public function destroy(Kpi $kpi)
+    public function destroy(int $id): JsonResponse
     {
-        $kpi->delete();
-
+        $this->kpiRepository->delete($id);
         return response()->json(null, 204);
     }
 }
